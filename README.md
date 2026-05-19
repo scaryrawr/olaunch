@@ -1,62 +1,99 @@
 # olaunch
 
-`olaunch` is an open launcher for local and OpenAI-compatible model workflows. It discovers local providers, selects a model, prepares the right environment or config for a coding agent, then launches the tool.
+`olaunch` launches coding-agent CLIs with local or OpenAI-compatible model providers. It can discover local models, prepare the environment or config an integration needs, and then start the selected tool.
 
-Initial integrations:
+## Supported integrations
 
-- `copilot` / `copilot-cli`
-- `claude` / `claude-code`
+- `copilot` (`copilot-cli`)
+- `claude` (`claude-code`)
 - `codex`
-- `hermes` / `hermes-agent`
+- `hermes` (`hermes-agent`)
 
-Droid is intentionally deferred until the core registry and config-editing patterns settle.
+## Install
 
-## Usage
-
-Launch with the explicit command:
+From a checkout of this repository:
 
 ```bash
-olaunch run copilot --model qwen3 -- --allow-all-tools
+cargo install --path .
 ```
 
-Or use the short alias:
+## Quick start
+
+Run an integration with a specific model:
 
 ```bash
 olaunch copilot --model qwen3
 ```
 
-Inspect the launch plan without writing config files or starting the tool:
+Use the explicit `run` command when you prefer the full form:
+
+```bash
+olaunch run copilot --model qwen3 -- --allow-all-tools
+```
+
+Arguments after `--` are passed through to the launched integration.
+
+Preview what `olaunch` would do without writing config files or starting the tool:
 
 ```bash
 olaunch codex --model qwen3 --provider ollama --dry-run
 ```
 
-List supported integrations and discovered models:
+## Commands
 
 ```bash
 olaunch list integrations
 olaunch list models
-```
-
-Check local provider and integration status:
-
-```bash
 olaunch doctor
-```
-
-Restore the latest `olaunch` backup for integrations that edit config:
-
-```bash
 olaunch restore codex
-olaunch restore hermes
 ```
+
+- `list integrations` shows the available integrations and aliases.
+- `list models` discovers models from configured local providers.
+- `doctor` checks provider reachability and integration availability.
+- `restore <integration>` restores the latest `olaunch` backup for integrations that edit config files.
 
 ## Providers
 
-Default provider priority follows `copilito`:
+By default, `olaunch` checks these local providers:
 
 1. LM Studio at `http://localhost:1234/v1`
 2. Ollama at `http://localhost:11434/v1`
 3. oMLX from `OMLX_BASE_URL` or `http://localhost:8000/v1`
 
-Use `--provider`, `--base-url`, and `--api-key-env` to target a specific OpenAI-compatible endpoint. Raw API keys are not accepted as command-line flags; pass secrets through environment variables.
+Use `--provider` to choose a known provider:
+
+```bash
+olaunch codex --provider ollama --model qwen3
+```
+
+Use `--base-url` for any OpenAI-compatible endpoint:
+
+```bash
+olaunch claude --base-url http://localhost:8000/v1 --model qwen3
+```
+
+If the endpoint needs a key, put the key in an environment variable and pass the variable name:
+
+```bash
+export LOCAL_API_KEY=...
+olaunch copilot --base-url http://localhost:8000/v1 --api-key-env LOCAL_API_KEY --model qwen3
+```
+
+`olaunch` does not accept raw API keys as command-line flags.
+
+## Config changes and backups
+
+Some integrations need config file changes before launch. `olaunch` creates a backup before writing those files and prints restore hints when changes are made.
+
+To apply config changes without starting the integration, use:
+
+```bash
+olaunch hermes --model qwen3 --configure-only
+```
+
+To restore the latest backup:
+
+```bash
+olaunch restore hermes
+```
