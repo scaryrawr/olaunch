@@ -23,7 +23,7 @@ pub enum OlaunchError {
     #[error(transparent)]
     Json(#[from] serde_json::Error),
     #[error(transparent)]
-    Yaml(#[from] serde_yaml::Error),
+    Yaml(#[from] yaml_serde::Error),
     #[error(transparent)]
     Toml(#[from] toml_edit::TomlError),
     #[error(transparent)]

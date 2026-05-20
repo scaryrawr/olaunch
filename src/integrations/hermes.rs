@@ -1,6 +1,6 @@
 use std::fs;
 
-use serde_yaml::{Mapping, Value};
+use yaml_serde::{Mapping, Value};
 
 use crate::error::Result;
 use crate::integrations::{
@@ -53,7 +53,7 @@ impl Integration for Hermes {
 }
 
 fn hermes_config(existing: &str, context: &LaunchContext) -> Result<String> {
-    let mut root = match serde_yaml::from_str::<Value>(existing).ok() {
+    let mut root = match yaml_serde::from_str::<Value>(existing).ok() {
         Some(Value::Mapping(map)) => map,
         _ => Mapping::new(),
     };
@@ -124,7 +124,7 @@ fn hermes_config(existing: &str, context: &LaunchContext) -> Result<String> {
     }
     root.insert(model_key, Value::Mapping(model));
 
-    Ok(serde_yaml::to_string(&Value::Mapping(root))?)
+    Ok(yaml_serde::to_string(&Value::Mapping(root))?)
 }
 
 #[cfg(test)]
