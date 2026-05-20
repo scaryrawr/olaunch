@@ -30,7 +30,7 @@ impl Integration for Hermes {
         let existing = fs::read_to_string(&config_path).unwrap_or_default();
         let content = hermes_config(&existing, context)?;
 
-        let mut args = vec!["--provider".into(), PROVIDER.into(), "--tui".into()];
+        let mut args = vec!["--provider".into(), PROVIDER.into()];
         if !context.model.id.is_empty() {
             args.extend(["--model".into(), context.model.id.clone()]);
         }
@@ -160,5 +160,54 @@ mod tests {
         assert!(content.contains("olaunch:"));
         assert!(content.contains("default: qwen"));
         assert!(content.contains("context_length: 64000"));
+    }
+
+    #[test]
+    fn launches_classic_chat_by_default() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = Paths::new(tmp.path());
+
+        let plan = Hermes
+            .plan_launch(&LaunchContext {
+                model: ModelInfo {
+                    id: "qwen".into(),
+                    provider: ProviderInfo::omlx(),
+                    context_window: None,
+                    max_output_tokens: None,
+                    loaded: None,
+                },
+                paths: path,
+                extra_args: vec![],
+                dry_run: true,
+            })
+            .unwrap();
+
+        assert_eq!(plan.args, vec!["--provider", "olaunch", "--model", "qwen"]);
+    }
+
+    #[test]
+    fn allows_explicit_tui_passthrough() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = Paths::new(tmp.path());
+
+        let plan = Hermes
+            .plan_launch(&LaunchContext {
+                model: ModelInfo {
+                    id: "qwen".into(),
+                    provider: ProviderInfo::omlx(),
+                    context_window: None,
+                    max_output_tokens: None,
+                    loaded: None,
+                },
+                paths: path,
+                extra_args: vec!["--tui".into()],
+                dry_run: true,
+            })
+            .unwrap();
+
+        assert_eq!(
+            plan.args,
+            vec!["--provider", "olaunch", "--model", "qwen", "--tui"]
+        );
     }
 }
