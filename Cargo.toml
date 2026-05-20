@@ -1,6 +1,6 @@
 [package]
 name = "olaunch"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 
 [dependencies]
@@ -10,7 +10,7 @@ dialoguer = "0.12.0"
 directories = "6.0.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
-serde_yml = "0.0.12"
+serde_yaml = "0.9.34"
 thiserror = "2.0.18"
 toml_edit = "0.25.11"
 tracing = "0.1.44"
