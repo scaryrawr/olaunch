@@ -11,7 +11,7 @@ mod copilot;
 mod hermes;
 
 pub use claude::ClaudeCode;
-pub use codex::Codex;
+pub use codex::{Codex, CodexApp};
 pub use copilot::Copilot;
 pub use hermes::Hermes;
 
@@ -156,6 +156,7 @@ pub fn specs() -> Vec<IntegrationSpec> {
         Copilot.spec(),
         ClaudeCode.spec(),
         Codex.spec(),
+        CodexApp.spec(),
         Hermes.spec(),
     ]
 }
@@ -175,6 +176,7 @@ pub fn get(name: &str) -> Result<Box<dyn Integration>> {
         "copilot" | "copilot-cli" => Box::new(Copilot),
         "claude" | "claude-code" => Box::new(ClaudeCode),
         "codex" => Box::new(Codex),
+        "codex-app" | "codex-desktop" => Box::new(CodexApp),
         "hermes" | "hermes-agent" => Box::new(Hermes),
         _ => return Err(OlaunchError::UnknownIntegration { name: name.into() }),
     };
@@ -221,13 +223,17 @@ mod tests {
             .into_iter()
             .map(|spec| spec.name)
             .collect::<Vec<_>>();
-        assert_eq!(names, vec!["copilot", "claude", "codex", "hermes"]);
+        assert_eq!(
+            names,
+            vec!["copilot", "claude", "codex", "codex-app", "hermes"]
+        );
     }
 
     #[test]
     fn resolves_aliases() {
         assert_eq!(get("copilot-cli").unwrap().spec().name, "copilot");
         assert_eq!(get("claude-code").unwrap().spec().name, "claude");
+        assert_eq!(get("codex-desktop").unwrap().spec().name, "codex-app");
         assert_eq!(get("hermes-agent").unwrap().spec().name, "hermes");
     }
 }

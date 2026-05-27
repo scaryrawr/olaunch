@@ -182,6 +182,10 @@ fn restore(name: &str) -> Result<ExitCode> {
     let paths = Paths::detect()?;
     match name {
         "codex" => restore_path(&paths.codex_config(), "codex")?,
+        "codex-app" | "codex-desktop" => {
+            restore_path(&paths.codex_config(), "codex-app")?;
+            restore_path(&paths.codex_app_model_catalog(), "codex-app")?;
+        }
         "hermes" => restore_path(&paths.hermes_config(), "hermes")?,
         other => {
             return Err(OlaunchError::Message(format!(

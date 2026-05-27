@@ -27,6 +27,12 @@ impl Paths {
         self.home.join(".codex").join("config.toml")
     }
 
+    pub fn codex_app_model_catalog(&self) -> PathBuf {
+        self.home
+            .join(".codex")
+            .join("olaunch-codex-app-models.json")
+    }
+
     pub fn hermes_config(&self) -> PathBuf {
         self.home.join(".hermes").join("config.yaml")
     }

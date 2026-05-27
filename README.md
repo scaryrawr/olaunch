@@ -7,6 +7,7 @@
 - `copilot` (`copilot-cli`)
 - `claude` (`claude-code`)
 - `codex`
+- `codex-app` (`codex-desktop`)
 - `hermes` (`hermes-agent`)
 
 ## Install
@@ -46,6 +47,7 @@ olaunch list integrations
 olaunch list models
 olaunch doctor
 olaunch restore codex
+olaunch restore codex-app
 ```
 
 - `list integrations` shows the available integrations and aliases.
