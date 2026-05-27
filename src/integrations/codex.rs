@@ -314,17 +314,17 @@ fn codex_app_windows_candidates(paths: &Paths) -> Vec<PathBuf> {
         .unwrap_or_else(|| paths.home().join("AppData").join("Local"));
 
     [
-        ["Programs", "Codex", "Codex.exe"],
-        ["Programs", "OpenAI Codex", "Codex.exe"],
-        ["Codex", "Codex.exe"],
-        ["OpenAI Codex", "Codex.exe"],
-        ["OpenAI", "Codex", "Codex.exe"],
-        ["openai-codex-electron", "Codex.exe"],
+        &["Programs", "Codex", "Codex.exe"][..],
+        &["Programs", "OpenAI Codex", "Codex.exe"][..],
+        &["Codex", "Codex.exe"][..],
+        &["OpenAI Codex", "Codex.exe"][..],
+        &["OpenAI", "Codex", "Codex.exe"][..],
+        &["openai-codex-electron", "Codex.exe"][..],
     ]
     .into_iter()
     .map(|parts| {
         parts
-            .into_iter()
+            .iter()
             .fold(local_app_data.clone(), |path, part| path.join(part))
     })
     .collect()
