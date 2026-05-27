@@ -9,11 +9,13 @@ mod claude;
 mod codex;
 mod copilot;
 mod hermes;
+mod opencode;
 
 pub use claude::ClaudeCode;
 pub use codex::{Codex, CodexApp};
 pub use copilot::Copilot;
 pub use hermes::Hermes;
+pub use opencode::OpenCode;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct IntegrationSpec {
@@ -158,6 +160,7 @@ pub fn specs() -> Vec<IntegrationSpec> {
         Codex.spec(),
         CodexApp.spec(),
         Hermes.spec(),
+        OpenCode.spec(),
     ]
 }
 
@@ -178,6 +181,7 @@ pub fn get(name: &str) -> Result<Box<dyn Integration>> {
         "codex" => Box::new(Codex),
         "codex-app" | "codex-desktop" => Box::new(CodexApp),
         "hermes" | "hermes-agent" => Box::new(Hermes),
+        "opencode" => Box::new(OpenCode),
         _ => return Err(OlaunchError::UnknownIntegration { name: name.into() }),
     };
     Ok(integration)
@@ -225,7 +229,14 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(
             names,
-            vec!["copilot", "claude", "codex", "codex-app", "hermes"]
+            vec![
+                "copilot",
+                "claude",
+                "codex",
+                "codex-app",
+                "hermes",
+                "opencode"
+            ]
         );
     }
 

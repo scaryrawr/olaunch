@@ -9,6 +9,7 @@
 - `codex`
 - `codex-app` (`codex-desktop`)
 - `hermes` (`hermes-agent`)
+- `opencode`
 
 ## Install
 
@@ -48,6 +49,7 @@ olaunch list models
 olaunch doctor
 olaunch restore codex
 olaunch restore codex-app
+olaunch restore opencode
 ```
 
 - `list integrations` shows the available integrations and aliases.

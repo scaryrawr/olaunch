@@ -187,6 +187,7 @@ fn restore(name: &str) -> Result<ExitCode> {
             restore_path(&paths.codex_app_model_catalog(), "codex-app")?;
         }
         "hermes" => restore_path(&paths.hermes_config(), "hermes")?,
+        "opencode" => restore_path(&paths.opencode_model_state(), "opencode")?,
         other => {
             return Err(OlaunchError::Message(format!(
                 "`{other}` does not have restore-managed config files yet"

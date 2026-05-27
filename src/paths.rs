@@ -37,6 +37,23 @@ impl Paths {
         self.home.join(".hermes").join("config.yaml")
     }
 
+    pub fn opencode_local_binary(&self) -> PathBuf {
+        let name = if cfg!(windows) {
+            "opencode.exe"
+        } else {
+            "opencode"
+        };
+        self.home.join(".opencode").join("bin").join(name)
+    }
+
+    pub fn opencode_model_state(&self) -> PathBuf {
+        self.home
+            .join(".local")
+            .join("state")
+            .join("opencode")
+            .join("model.json")
+    }
+
     pub fn claude_local_binary(&self) -> PathBuf {
         let name = if cfg!(windows) {
             "claude.exe"
