@@ -415,10 +415,11 @@ mod tests {
         assert!(content.contains("profile = \"olaunch-codex-app\""));
         assert!(content.contains("model = \"qwen\""));
         assert!(content.contains("model_provider = \"olaunch-codex-app\""));
-        assert!(content.contains(&format!(
-            "model_catalog_json = {:?}",
+        let parsed: toml_edit::DocumentMut = content.parse().unwrap();
+        assert_eq!(
+            parsed["model_catalog_json"].as_str().unwrap(),
             catalog_path.display().to_string()
-        )));
+        );
         assert!(content.contains("[profiles.olaunch-codex-app]"));
         assert!(content.contains("[model_providers.olaunch-codex-app]"));
     }

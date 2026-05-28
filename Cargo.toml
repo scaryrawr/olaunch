@@ -23,7 +23,3 @@ assert_cmd = "2.2.2"
 mockito = "1.7.2"
 predicates = "3.1.4"
 tempfile = "3.27.0"
-
-[[bin]]
-name = "toml_path_test"
-path = "/tmp/toml_path_debug.rs"
