@@ -314,17 +314,17 @@ fn codex_app_windows_candidates(paths: &Paths) -> Vec<PathBuf> {
         .unwrap_or_else(|| paths.home().join("AppData").join("Local"));
 
     [
-        ["Programs", "Codex", "Codex.exe"],
-        ["Programs", "OpenAI Codex", "Codex.exe"],
-        ["Codex", "Codex.exe"],
-        ["OpenAI Codex", "Codex.exe"],
-        ["OpenAI", "Codex", "Codex.exe"],
-        ["openai-codex-electron", "Codex.exe"],
+        &["Programs", "Codex", "Codex.exe"][..],
+        &["Programs", "OpenAI Codex", "Codex.exe"][..],
+        &["Codex", "Codex.exe"][..],
+        &["OpenAI Codex", "Codex.exe"][..],
+        &["OpenAI", "Codex", "Codex.exe"][..],
+        &["openai-codex-electron", "Codex.exe"][..],
     ]
     .into_iter()
     .map(|parts| {
         parts
-            .into_iter()
+            .iter()
             .fold(local_app_data.clone(), |path, part| path.join(part))
     })
     .collect()
@@ -415,10 +415,11 @@ mod tests {
         assert!(content.contains("profile = \"olaunch-codex-app\""));
         assert!(content.contains("model = \"qwen\""));
         assert!(content.contains("model_provider = \"olaunch-codex-app\""));
-        assert!(content.contains(&format!(
-            "model_catalog_json = {:?}",
+        let parsed: toml_edit::DocumentMut = content.parse().unwrap();
+        assert_eq!(
+            parsed["model_catalog_json"].as_str().unwrap(),
             catalog_path.display().to_string()
-        )));
+        );
         assert!(content.contains("[profiles.olaunch-codex-app]"));
         assert!(content.contains("[model_providers.olaunch-codex-app]"));
     }
