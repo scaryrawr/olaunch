@@ -3,7 +3,7 @@ use std::io::{self, IsTerminal};
 use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand};
-use dialoguer::Select;
+use dialoguer::FuzzySelect;
 
 use crate::config;
 use crate::error::{OlaunchError, Result};
@@ -248,7 +248,7 @@ fn pick_model(models: Vec<ModelInfo>) -> Result<ModelInfo> {
         .iter()
         .map(|model| format!("{} ({})", model.id, model.provider.display_name))
         .collect::<Vec<_>>();
-    let selected = Select::new()
+    let selected = FuzzySelect::new()
         .with_prompt("Select a model")
         .items(&items)
         .default(0)
