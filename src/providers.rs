@@ -9,6 +9,7 @@ use crate::error::{OlaunchError, Result};
 
 const LM_STUDIO_BASE_URL: &str = "http://localhost:1234/v1";
 const OLLAMA_BASE_URL: &str = "http://localhost:11434/v1";
+const OSAURUS_BASE_URL: &str = "http://localhost:1337/v1";
 const OMLX_BASE_URL_DEFAULT: &str = "http://localhost:8000";
 const OMLX_API_KEY_ENV: &str = "OMLX_API_KEY";
 
@@ -16,6 +17,7 @@ const OMLX_API_KEY_ENV: &str = "OMLX_API_KEY";
 pub enum ProviderKind {
     LmStudio,
     Ollama,
+    Osaurus,
     Omlx,
     Generic,
 }
@@ -62,6 +64,17 @@ impl ProviderInfo {
         }
     }
 
+    pub fn osaurus() -> Self {
+        Self {
+            kind: ProviderKind::Osaurus,
+            name: "osaurus".into(),
+            display_name: "Osaurus".into(),
+            base_url: OSAURUS_BASE_URL.into(),
+            api_key_env: None,
+            local_placeholder_token: Some("osaurus".into()),
+        }
+    }
+
     pub fn omlx() -> Self {
         Self {
             kind: ProviderKind::Omlx,
@@ -103,6 +116,7 @@ pub fn provider_by_name(
     match name {
         "lmstudio" | "lm-studio" | "lm_studio" => Ok(ProviderInfo::lm_studio()),
         "ollama" => Ok(ProviderInfo::ollama()),
+        "osaurus" => Ok(ProviderInfo::osaurus()),
         "omlx" => Ok(ProviderInfo::omlx()),
         "generic" | "openai" | "openai-compatible" => base_url
             .map(|url| ProviderInfo::generic(url, api_key_env))
@@ -123,6 +137,7 @@ pub fn default_providers() -> Vec<ProviderInfo> {
     vec![
         ProviderInfo::lm_studio(),
         ProviderInfo::ollama(),
+        ProviderInfo::osaurus(),
         ProviderInfo::omlx(),
     ]
 }
@@ -293,8 +308,9 @@ fn provider_rank(provider: &ProviderInfo) -> u8 {
     match provider.kind {
         ProviderKind::LmStudio => 0,
         ProviderKind::Ollama => 1,
-        ProviderKind::Omlx => 2,
-        ProviderKind::Generic => 3,
+        ProviderKind::Osaurus => 2,
+        ProviderKind::Omlx => 3,
+        ProviderKind::Generic => 4,
     }
 }
 
@@ -307,7 +323,10 @@ fn loaded_rank(model: &ModelInfo) -> Ordering {
 
 #[cfg(test)]
 mod tests {
-    use super::{normalize_omlx_base_url, normalize_v1_base_url};
+    use super::{
+        ProviderInfo, ProviderKind, normalize_omlx_base_url, normalize_v1_base_url,
+        provider_by_name,
+    };
 
     #[test]
     fn normalizes_v1_urls() {
@@ -323,5 +342,21 @@ mod tests {
             normalize_omlx_base_url("http://localhost:8000"),
             "http://localhost:8000/v1"
         );
+    }
+
+    #[test]
+    fn osaurus_provider_defaults() {
+        let provider = ProviderInfo::osaurus();
+        assert_eq!(provider.kind, ProviderKind::Osaurus);
+        assert_eq!(provider.name, "osaurus");
+        assert_eq!(provider.base_url, "http://localhost:1337/v1");
+        assert_eq!(provider.local_placeholder_token.as_deref(), Some("osaurus"));
+        assert_eq!(provider.token().as_deref(), Some("osaurus"));
+    }
+
+    #[test]
+    fn resolves_osaurus_by_name() {
+        let provider = provider_by_name("osaurus", None, None).expect("osaurus provider");
+        assert_eq!(provider.kind, ProviderKind::Osaurus);
     }
 }
