@@ -181,7 +181,11 @@ fn doctor() -> Result<ExitCode> {
 fn restore(name: &str) -> Result<ExitCode> {
     let paths = Paths::detect()?;
     match name {
-        "codex" => restore_path(&paths.codex_config(), "codex")?,
+        "codex" => {
+            if !restore_path_if_found(&paths.codex_profile_config("olaunch"), "codex")? {
+                restore_path(&paths.codex_config(), "codex")?;
+            }
+        }
         "codex-app" | "codex-desktop" => {
             restore_path(&paths.codex_config(), "codex-app")?;
             restore_path(&paths.codex_app_model_catalog(), "codex-app")?;
@@ -198,11 +202,20 @@ fn restore(name: &str) -> Result<ExitCode> {
 }
 
 fn restore_path(path: &std::path::Path, integration: &str) -> Result<()> {
-    match config::restore_latest(path, integration)? {
-        Some(backup) => println!("restored {} from {}", path.display(), backup.display()),
-        None => println!("no olaunch backup found for {}", path.display()),
+    if !restore_path_if_found(path, integration)? {
+        println!("no olaunch backup found for {}", path.display());
     }
     Ok(())
+}
+
+fn restore_path_if_found(path: &std::path::Path, integration: &str) -> Result<bool> {
+    match config::restore_latest(path, integration)? {
+        Some(backup) => {
+            println!("restored {} from {}", path.display(), backup.display());
+            Ok(true)
+        }
+        None => Ok(false),
+    }
 }
 
 fn resolve_model(args: &RunArgs) -> Result<ModelInfo> {

@@ -27,6 +27,12 @@ impl Paths {
         self.home.join(".codex").join("config.toml")
     }
 
+    pub fn codex_profile_config(&self, profile: &str) -> PathBuf {
+        self.home
+            .join(".codex")
+            .join(format!("{profile}.config.toml"))
+    }
+
     pub fn codex_app_model_catalog(&self) -> PathBuf {
         self.home
             .join(".codex")

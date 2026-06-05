@@ -31,9 +31,9 @@ impl Integration for Codex {
     }
 
     fn plan_launch(&self, context: &LaunchContext) -> Result<LaunchPlan> {
-        let config_path = context.paths.codex_config();
+        let config_path = context.paths.codex_profile_config(PROFILE);
         let existing = fs::read_to_string(&config_path).unwrap_or_default();
-        let content = codex_config(&existing, context)?;
+        let content = codex_cli_profile_config(&existing, context)?;
 
         let mut args = vec!["--profile".into(), PROFILE.into()];
         if !context.model.id.is_empty() {
@@ -108,26 +108,20 @@ impl Integration for CodexApp {
     }
 }
 
-fn codex_config(existing: &str, context: &LaunchContext) -> Result<String> {
+fn codex_cli_profile_config(existing: &str, context: &LaunchContext) -> Result<String> {
     let mut doc = existing
         .parse::<DocumentMut>()
         .unwrap_or_else(|_| DocumentMut::new());
+    let base_url = format!("{}/", provider_base_url(&context.model.provider));
 
-    ensure_table(&mut doc, "profiles");
-    ensure_nested_table(&mut doc, "profiles", PROFILE);
-    ensure_table(&mut doc, "model_providers");
-    ensure_nested_table(&mut doc, "model_providers", PROFILE);
+    remove_nested_table(&mut doc, "profiles", PROFILE);
+    remove_matching_profile_selector(&mut doc, PROFILE);
+    doc.remove("openai_base_url");
 
-    doc["profiles"][PROFILE]["model"] = value(context.model.id.clone());
-    doc["profiles"][PROFILE]["model_provider"] = value(PROFILE);
-    doc["profiles"][PROFILE]["openai_base_url"] =
-        value(format!("{}/", provider_base_url(&context.model.provider)));
-    doc["profiles"][PROFILE]["forced_login_method"] = value("api");
-
-    doc["model_providers"][PROFILE]["name"] = value("olaunch");
-    doc["model_providers"][PROFILE]["base_url"] =
-        value(format!("{}/", provider_base_url(&context.model.provider)));
-    doc["model_providers"][PROFILE]["wire_api"] = value("responses");
+    doc["model"] = value(context.model.id.clone());
+    doc["model_provider"] = value(PROFILE);
+    doc["forced_login_method"] = value("api");
+    write_model_provider(&mut doc, PROFILE, context, base_url);
 
     Ok(doc.to_string())
 }
@@ -143,27 +137,14 @@ fn codex_app_config(
     let catalog_path = catalog_path.display().to_string();
     let base_url = format!("{}/", provider_base_url(&context.model.provider));
 
-    ensure_table(&mut doc, "profiles");
-    ensure_nested_table(&mut doc, "profiles", CODEX_APP_PROFILE);
-    ensure_table(&mut doc, "model_providers");
-    ensure_nested_table(&mut doc, "model_providers", CODEX_APP_PROFILE);
+    remove_nested_table(&mut doc, "profiles", CODEX_APP_PROFILE);
+    remove_matching_profile_selector(&mut doc, CODEX_APP_PROFILE);
 
-    doc["profile"] = value(CODEX_APP_PROFILE);
     doc["model"] = value(context.model.id.clone());
     doc["model_provider"] = value(CODEX_APP_PROFILE);
     doc["model_catalog_json"] = value(catalog_path.clone());
 
-    doc["profiles"][CODEX_APP_PROFILE]["model"] = value(context.model.id.clone());
-    doc["profiles"][CODEX_APP_PROFILE]["model_provider"] = value(CODEX_APP_PROFILE);
-    doc["profiles"][CODEX_APP_PROFILE]["openai_base_url"] = value(base_url.clone());
-    doc["profiles"][CODEX_APP_PROFILE]["model_catalog_json"] = value(catalog_path);
-
-    doc["model_providers"][CODEX_APP_PROFILE]["name"] = value("olaunch");
-    doc["model_providers"][CODEX_APP_PROFILE]["base_url"] = value(base_url);
-    doc["model_providers"][CODEX_APP_PROFILE]["wire_api"] = value("responses");
-    if let Some(api_key_env) = &context.model.provider.api_key_env {
-        doc["model_providers"][CODEX_APP_PROFILE]["env_key"] = value(api_key_env.clone());
-    }
+    write_model_provider(&mut doc, CODEX_APP_PROFILE, context, base_url);
 
     Ok(doc.to_string())
 }
@@ -345,11 +326,49 @@ fn ensure_nested_table(doc: &mut DocumentMut, parent: &str, child: &str) {
     }
 }
 
+fn remove_nested_table(doc: &mut DocumentMut, parent: &str, child: &str) {
+    let Some(Item::Table(table)) = doc.get_mut(parent) else {
+        return;
+    };
+    table.remove(child);
+    if table.is_empty() {
+        doc.remove(parent);
+    }
+}
+
+fn remove_matching_profile_selector(doc: &mut DocumentMut, profile: &str) {
+    if doc.get("profile").and_then(Item::as_str) == Some(profile) {
+        doc.remove("profile");
+    }
+}
+
+fn write_model_provider(
+    doc: &mut DocumentMut,
+    provider_name: &str,
+    context: &LaunchContext,
+    base_url: String,
+) {
+    ensure_table(doc, "model_providers");
+    ensure_nested_table(doc, "model_providers", provider_name);
+
+    let provider = doc["model_providers"][provider_name]
+        .as_table_mut()
+        .expect("model provider table must exist after ensure_nested_table");
+    provider["name"] = value("olaunch");
+    provider["base_url"] = value(base_url);
+    provider["wire_api"] = value("responses");
+    if let Some(api_key_env) = &context.model.provider.api_key_env {
+        provider["env_key"] = value(api_key_env.clone());
+    } else {
+        provider.remove("env_key");
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::Value;
 
-    use super::{codex_app_config, codex_app_model_catalog};
+    use super::{PROFILE, codex_app_config, codex_app_model_catalog};
     use crate::integrations::{Codex, CodexApp, Integration, LaunchContext};
     use crate::paths::Paths;
     use crate::providers::{ModelInfo, ProviderInfo};
@@ -360,8 +379,8 @@ mod tests {
         let path = Paths::new(tmp.path());
         std::fs::create_dir_all(tmp.path().join(".codex")).unwrap();
         std::fs::write(
-            path.codex_config(),
-            "# keep me\napproval_policy = \"never\"\n",
+            path.codex_profile_config(PROFILE),
+            "# keep me\napproval_policy = \"never\"\n\n[profiles.olaunch]\nmodel = \"old\"\n",
         )
         .unwrap();
 
@@ -374,17 +393,28 @@ mod tests {
                     max_output_tokens: None,
                     loaded: None,
                 },
-                paths: path,
+                paths: path.clone(),
                 extra_args: vec![],
                 dry_run: true,
             })
             .unwrap();
 
+        assert_eq!(
+            plan.config_edits[0].path,
+            path.codex_profile_config(PROFILE)
+        );
         let content = &plan.config_edits[0].content;
         assert!(content.contains("# keep me"));
-        assert!(content.contains("[profiles.olaunch]"));
-        assert!(content.contains("model = \"qwen\""));
-        assert!(content.contains("[model_providers.olaunch]"));
+        assert!(!content.contains("[profiles.olaunch]"));
+        let parsed: toml_edit::DocumentMut = content.parse().unwrap();
+        assert_eq!(parsed["model"].as_str().unwrap(), "qwen");
+        assert_eq!(parsed["model_provider"].as_str().unwrap(), "olaunch");
+        assert_eq!(
+            parsed["model_providers"]["olaunch"]["base_url"]
+                .as_str()
+                .unwrap(),
+            "http://localhost:11434/v1/"
+        );
     }
 
     #[test]
@@ -394,7 +424,7 @@ mod tests {
         let catalog_path = path.codex_app_model_catalog();
 
         let content = codex_app_config(
-            "# keep me\nprofile = \"usual\"\n",
+            "# keep me\napproval_policy = \"never\"\nprofile = \"olaunch-codex-app\"\n\n[profiles.olaunch-codex-app]\nmodel = \"old\"\n",
             &LaunchContext {
                 model: ModelInfo {
                     id: "qwen".into(),
@@ -412,15 +442,18 @@ mod tests {
         .unwrap();
 
         assert!(content.contains("# keep me"));
-        assert!(content.contains("profile = \"olaunch-codex-app\""));
-        assert!(content.contains("model = \"qwen\""));
-        assert!(content.contains("model_provider = \"olaunch-codex-app\""));
         let parsed: toml_edit::DocumentMut = content.parse().unwrap();
+        assert!(parsed.get("profile").is_none());
+        assert!(parsed.get("profiles").is_none());
+        assert_eq!(parsed["model"].as_str().unwrap(), "qwen");
+        assert_eq!(
+            parsed["model_provider"].as_str().unwrap(),
+            "olaunch-codex-app"
+        );
         assert_eq!(
             parsed["model_catalog_json"].as_str().unwrap(),
             catalog_path.display().to_string()
         );
-        assert!(content.contains("[profiles.olaunch-codex-app]"));
         assert!(content.contains("[model_providers.olaunch-codex-app]"));
     }
 
