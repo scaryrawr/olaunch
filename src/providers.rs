@@ -180,6 +180,7 @@ struct OmlxStatusModel {
     #[serde(alias = "max_output_tokens")]
     max_tokens: Option<u32>,
     loaded: Option<bool>,
+    engine_type: Option<String>,
 }
 
 pub fn discover_models() -> Result<Vec<ModelInfo>> {
@@ -210,12 +211,11 @@ pub fn discover_models() -> Result<Vec<ModelInfo>> {
 }
 
 pub fn discover_provider_models(provider: ProviderInfo) -> Result<Vec<ModelInfo>> {
-    if provider.kind == ProviderKind::Omlx {
-        if let Ok(models) = discover_omlx_status_models(provider.clone())
-            && !models.is_empty()
-        {
-            return Ok(models);
-        }
+    if provider.kind == ProviderKind::Omlx
+        && let Ok(models) = discover_omlx_status_models(provider.clone())
+        && !models.is_empty()
+    {
+        return Ok(models);
     }
 
     discover_openai_models(provider)
@@ -242,6 +242,11 @@ fn discover_omlx_status_models(provider: ProviderInfo) -> Result<Vec<ModelInfo>>
         .filter_map(|model| {
             let id = model.id?.trim().to_string();
             if id.is_empty() {
+                return None;
+            }
+            // Only expose LLM and VLM models; filter out other engine types
+            let engine_type = model.engine_type?;
+            if engine_type != "llm" && engine_type != "vlm" {
                 return None;
             }
             Some(ModelInfo {
