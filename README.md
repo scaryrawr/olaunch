@@ -86,6 +86,8 @@ olaunch copilot --base-url http://localhost:8000/v1 --api-key-env LOCAL_API_KEY 
 
 `olaunch` does not accept raw API keys as command-line flags.
 
+Copilot launches set `COPILOT_OFFLINE=true` so Copilot CLI uses the configured provider instead of GitHub-hosted model routing.
+
 ## Config changes and backups
 
 Some integrations need config file changes before launch. `olaunch` creates a backup before writing those files and prints restore hints when changes are made.

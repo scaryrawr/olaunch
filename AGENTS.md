@@ -41,3 +41,5 @@ Tests are colocated in module-level `#[cfg(test)]` blocks under `src/`; there is
 ## Security & Configuration Tips
 
 Do not add CLI arguments that accept raw API keys. Pass secrets through named environment variables and represent secret launch environment changes with `EnvChange::set_secret`. Preserve user config whenever possible: existing Codex TOML, Hermes YAML, and similar files should be parsed and amended rather than overwritten wholesale. Config writes create `.olaunch-<integration>.<timestamp>.bak` backups; keep restore behavior compatible with those filenames. `process::run_command` uses `exec` on Unix, so apply all config edits and validation before invoking it.
+
+For Copilot BYOK launches, keep `COPILOT_OFFLINE=true` with the custom provider environment so Copilot CLI stays on the configured provider and cannot fall back to GitHub-hosted model routing.

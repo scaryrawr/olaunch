@@ -32,6 +32,7 @@ impl Integration for Copilot {
                 provider_base_url(&context.model.provider),
             ),
             EnvChange::set("COPILOT_PROVIDER_TYPE", "openai"),
+            EnvChange::set("COPILOT_OFFLINE", "true"),
             EnvChange::set("COPILOT_PROVIDER_WIRE_API", "responses"),
             EnvChange::set("COPILOT_MODEL", context.model.id.clone()),
             EnvChange::set("COPILOT_PROVIDER_MODEL_ID", context.model.id.clone()),
@@ -92,6 +93,7 @@ mod tests {
             env.get("COPILOT_PROVIDER_BASE_URL").unwrap().as_deref(),
             Some("http://localhost:1234/v1")
         );
+        assert_eq!(env.get("COPILOT_OFFLINE").unwrap().as_deref(), Some("true"));
         assert_eq!(env.get("COPILOT_MODEL").unwrap().as_deref(), Some("qwen"));
     }
 }
